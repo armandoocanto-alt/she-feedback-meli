@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#1C1C1C"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>SHE Feedback — MercadoLibre</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    :root{--y:#FFE600;--yd:#D4BF00;--bg:#1C1C1C;--bg2:#262626;--bg3:#323232;
+      --border:#3E3E3E;--text:#FFF;--text2:#AAA;--text3:#666;
+      --red:#E74C3C;--green:#27AE60;--r:12px;--rs:8px}
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;overflow-x:hidden}
+    .screen{display:none;min-height:100vh;flex-direction:column}
+    .screen.active{display:flex}
+
+    /* LOGIN */
+    #login{align-items:center;justify-content:center;padding:2rem 1.5rem;
+      background:radial-gradient(ellipse at 50% 0%,#2a2a00 0%,var(--bg) 60%)}
+    .login-logo{width:72px;height:72px;background:var(--y);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;
+      font-size:2rem;box-shadow:0 0 40px rgba(255,230,0,.25)}
+    .login-title{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:4px}
+    .login-sub{font-size:.875rem;color:var(--text2);text-align:center;margin-bottom:2.5rem}
+    .login-card{width:100%;max-width:380px;display:flex;flex-direction:column;gap:1rem}
+    .login-note{font-size:.75rem;color:var(--text3);text-align:center;margin-top:.5rem}
+
+    /* INPUTS */
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:.8rem;color:var(--text2);font-weight:500}
+    .field label .req{color:var(--red);margin-left:2px}
+    .field label .opt{color:var(--text3);font-weight:400;margin-left:4px}
+    input[type=text],input[type=email],input[type=password],input[type=datetime-local],
+    textarea,select{width:100%;background:var(--bg3);border:1.5px solid var(--border);
+      border-radius:var(--rs);color:var(--text);font-size:.95rem;padding:.75rem 1rem;
+      outline:none;transition:border-color .2s;-webkit-appearance:none;font-family:inherit}
+    input:focus,textarea:focus,select:focus{border-color:var(--y)}
+    input.error,select.error,textarea.error{border-color:var(--red)!important}
+    input[type=datetime-local]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer}
+    select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 12px center;padding-right:2.5rem}
+    select option{background:var(--bg3)}
+    textarea{resize:none;min-height:90px}
+    ::placeholder{color:var(--text3)}
+
+    /* Input row with buttons */
+    .input-row{display:flex;gap:8px;align-items:stretch}
+    .input-row input{flex:1;min-width:0}
+    .btn-icon{width:46px;height:46px;flex-shrink:0;background:var(--bg3);
+      border:1.5px solid var(--border);border-radius:var(--rs);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.2rem;cursor:pointer;transition:all .15s}
+    .btn-icon:active{border-color:var(--y);background:rgba(255,230,0,.1)}
+    .btn-lookup{padding:0 1rem;background:var(--y);color:#1C1C1C;
+      border:none;border-radius:var(--rs);font-size:.85rem;font-weight:700;
+      cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s;
+      height:46px}
+    .btn-lookup:active{background:var(--yd)}
+    .btn-lookup:disabled{background:var(--border);color:var(--text3);cursor:not-allowed}
+
+    /* BUTTONS */
+    .btn{width:100%;padding:.9rem;background:var(--y);color:#1C1C1C;
+      border:none;border-radius:var(--r);font-size:1rem;font-weight:700;
+      cursor:pointer;transition:background .15s,transform .1s}
+    .btn:active{background:var(--yd);transform:scale(.98)}
+    .btn-outline{background:transparent;color:var(--text2);border:1.5px solid var(--border)}
+    .btn-outline:active{background:var(--bg3)}
+
+    /* FORM */
+    #form-screen{background:var(--bg);padding-bottom:100px}
+    .form-header{background:var(--bg);border-bottom:1px solid var(--border);
+      padding:1rem;display:flex;align-items:center;gap:.75rem;position:sticky;top:0;z-index:50}
+    .form-header-logo{width:32px;height:32px;background:var(--y);border-radius:50%;
+      display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+    .form-header-title{font-size:.95rem;font-weight:700;line-height:1.2}
+    .form-header-sub{font-size:.75rem;color:var(--text2)}
+    .header-user{margin-left:auto;font-size:.7rem;color:var(--text2);text-align:right;cursor:pointer}
+    .form-body{padding:1rem;display:flex;flex-direction:column;gap:1.25rem}
+    .section-title{font-size:.7rem;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--y);padding:.5rem 0 .25rem;
+      border-bottom:1px solid var(--border);margin-bottom:.25rem}
+    .section{display:flex;flex-direction:column;gap:1rem}
+
+    /* Reg badge */
+    .reg-badge{display:flex;align-items:center;justify-content:space-between;
+      background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--rs);padding:.75rem 1rem}
+    .reg-badge-label{font-size:.75rem;color:var(--text2)}
+    .reg-badge-value{font-size:1rem;font-weight:700;font-family:monospace;letter-spacing:.05em}
+    .reg-badge-copy{font-size:.75rem;color:var(--y);cursor:pointer;font-weight:600}
+
+    /* Chips */
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);
+      background:var(--bg3);color:var(--text2);font-size:.85rem;cursor:pointer;
+      transition:all .15s;user-select:none}
+    .chip.active{background:var(--y);color:#1C1C1C;border-color:var(--y);font-weight:600}
+
+    /* Radio */
+    .radio-group{display:flex;flex-direction:column;gap:10px}
+    .radio-btn{display:flex;align-items:center;gap:12px;background:var(--bg3);
+      border:1.5px solid var(--border);border-radius:var(--rs);padding:1rem;
+      cursor:pointer;transition:all .15s}
+    .radio-btn.active{border-color:var(--y);background:rgba(255,230,0,.08)}
+    .radio-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);
+      flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .radio-btn.active .radio-dot{border-color:var(--y);background:var(--y)}
+    .radio-dot-inner{width:8px;height:8px;border-radius:50%;background:#1C1C1C;display:none}
+    .radio-btn.active .radio-dot-inner{display:block}
+    .radio-label{font-size:.95rem}
+    .radio-desc{font-size:.75rem;color:var(--text2);margin-top:2px}
+
+    /* Especificación */
+    .espec-container{display:none;flex-direction:column;gap:8px}
+    .espec-container.show{display:flex}
+    .espec-title{font-size:.78rem;color:var(--text2);font-weight:600;
+      text-transform:uppercase;letter-spacing:.05em}
+    .espec-item{display:flex;align-items:center;gap:12px;background:var(--bg3);
+      border:1.5px solid var(--border);border-radius:var(--rs);padding:.875rem 1rem;
+      cursor:pointer;transition:all .15s}
+    .espec-item.active{border-color:var(--y);background:rgba(255,230,0,.08)}
+    .espec-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);
+      flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .espec-item.active .espec-dot{border-color:var(--y);background:var(--y)}
+    .espec-dot-inner{width:7px;height:7px;border-radius:50%;background:#1C1C1C;display:none}
+    .espec-item.active .espec-dot-inner{display:block}
+    .espec-text{font-size:.9rem;line-height:1.3}
+
+    /* Foto */
+    .photo-zone{border:2px dashed var(--border);border-radius:var(--r);
+      padding:2rem 1rem;text-align:center;cursor:pointer}
+    .photo-zone:active{border-color:var(--y)}
+    .photo-icon{font-size:2rem;margin-bottom:.5rem}
+    .photo-text{font-size:.875rem;color:var(--text2)}
+    .photo-preview{display:none;position:relative}
+    .photo-preview img{width:100%;border-radius:var(--rs);max-height:200px;object-fit:cover}
+    .photo-remove{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);
+      border:none;border-radius:50%;width:28px;height:28px;color:white;
+      cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+    #photo-input{display:none}
+
+    /* Footer */
+    .form-footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);
+      border-top:1px solid var(--border);padding:1rem;z-index:50}
+
+    /* SUCCESS */
+    #success{align-items:center;justify-content:center;padding:2rem;text-align:center;
+      background:radial-gradient(ellipse at 50% 30%,#003300 0%,var(--bg) 60%)}
+    .success-icon{font-size:4rem;margin-bottom:1.5rem}
+    .success-title{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}
+    .success-sub{color:var(--text2);margin-bottom:.5rem}
+    .success-reg{font-family:monospace;font-size:1.1rem;color:var(--y);font-weight:700;margin:1rem 0 2rem}
+    .success-actions{width:100%;max-width:340px;display:flex;flex-direction:column;gap:1rem}
+
+    /* Errors */
+    .error-msg{font-size:.75rem;color:var(--red);margin-top:3px;display:none}
+    .error-msg.show{display:block}
+    .divider{height:1px;background:var(--border)}
+    .lookup-status{font-size:.75rem;margin-top:4px;display:none}
+    .lookup-status.ok{color:var(--green);display:block}
+    .lookup-status.err{color:var(--red);display:block}
+
+    /* QR MODAL */
+    .qr-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100}
+    .qr-overlay.show{display:block}
+    .qr-modal{display:none;position:fixed;bottom:0;left:0;right:0;
+      background:var(--bg2);border-radius:20px 20px 0 0;
+      padding:1.5rem 1rem 2rem;z-index:101;max-height:90vh;overflow-y:auto}
+    .qr-modal.show{display:block}
+    .qr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+    .qr-header-title{font-size:1.1rem;font-weight:700}
+    .qr-close{background:var(--bg3);border:none;color:var(--text2);
+      width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center}
+    #qr-reader{width:100%;border-radius:var(--rs);overflow:hidden;margin-bottom:1rem}
+    #qr-reader video{width:100%!important;border-radius:var(--rs)}
+    #qr-reader img{display:none!important}
+    .qr-hint{font-size:.85rem;color:var(--text2);text-align:center;margin-bottom:1rem}
+    .qr-manual{display:flex;gap:8px}
+    .qr-manual input{flex:1;background:var(--bg3);border:1.5px solid var(--border);
+      border-radius:var(--rs);color:var(--text);font-size:.95rem;padding:.75rem 1rem;outline:none}
+    .qr-manual input:focus{border-color:var(--y)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);
+      background:var(--bg3);color:var(--text);padding:.6rem 1.2rem;
+      border-radius:20px;font-size:.85rem;font-weight:500;border:1px solid var(--border);
+      z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+    .toast.show{opacity:1}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="screen active">
+  <div class="login-logo">🤝</div>
+  <div class="login-title">MercadoLibre</div>
+  <div class="login-sub">SHE Feedback — XD Chile</div>
+  <div class="login-card">
+    <div class="field">
+      <label>Correo @mercadolibre.cl</label>
+      <input type="email" id="login-email" placeholder="usuario@mercadolibre.cl" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeypress="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <div id="login-error" class="error-msg">Correo o contraseña incorrectos.</div>
+    <button class="btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-note">Solo cuentas @mercadolibre.cl · @mercadolibre.com</div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div id="form-screen" class="screen">
+  <div class="form-header">
+    <div class="form-header-logo">🤝</div>
+    <div>
+      <div class="form-header-title">SHE Feedback</div>
+      <div class="form-header-sub">Registro de desviación / incidente</div>
+    </div>
+    <div class="header-user" onclick="doLogout()">
+      <div id="header-email" style="font-size:.7rem"></div>
+      <div style="color:var(--y);font-size:.7rem;font-weight:600">Cerrar sesión</div>
+    </div>
+  </div>
+
+  <div class="form-body">
+
+    <!-- §1 REGISTRO -->
+    <div class="section">
+      <div class="section-title">📋 Datos del registro</div>
+      <div class="field">
+        <label>Número de registro</label>
+        <div class="reg-badge">
+          <div>
+            <div class="reg-badge-label">ID autogenerado</div>
+            <div class="reg-badge-value" id="reg-number">—</div>
+          </div>
+          <div class="reg-badge-copy" onclick="copyReg()">Copiar</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Fecha y hora <span class="req">*</span></label>
+        <input type="datetime-local" id="f-fecha"/>
+      </div>
+      <div class="field">
+        <label>Mail del TL / Manager <span class="req">*</span></label>
+        <input type="email" id="f-manager" placeholder="tl@mercadolibre.cl"/>
+        <div class="error-msg" id="e-manager">Campo requerido</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- §2 COLABORADOR -->
+    <div class="section">
+      <div class="section-title">👷 Datos del colaborador</div>
+
+      <div class="field">
+        <label>KRAKEN ID (LMS) <span class="req">*</span></label>
+        <div class="input-row">
+          <input type="text" id="f-kraken" placeholder="{2020268}" oninput="resetLookup()"/>
+          <div class="btn-icon" onclick="openQR()" title="Escanear QR">📷</div>
+          <button class="btn-lookup" onclick="doLookupBtn()">Buscar →</button>
+        </div>
+        <div class="lookup-status" id="lookup-status"></div>
+        <div class="error-msg" id="e-kraken">Campo requerido</div>
+      </div>
+
+      <div class="field">
+        <label>Nombre completo <span class="req">*</span></label>
+        <input type="text" id="f-nombre" placeholder="NOMBRE APELLIDO" style="text-transform:uppercase"/>
+        <div class="error-msg" id="e-nombre">Campo requerido</div>
+      </div>
+      <div class="field">
+        <label>RUT <span class="req">*</span></label>
+        <input type="text" id="f-rut" placeholder="12345678-9"/>
+        <div class="error-msg" id="e-rut">Campo requerido</div>
+      </div>
+      <div class="field">
+        <label>LDAP</label>
+        <input type="text" id="f-ldap" placeholder="usuarioldap" autocapitalize="none"/>
+      </div>
+      <div class="field">
+        <label>Cargo</label>
+        <input type="text" id="f-cargo" placeholder="REP 1" readonly style="color:var(--text2)"/>
+      </div>
+      <div class="field">
+        <label>Empresa <span class="req">*</span></label>
+        <select id="f-empresa">
+          <option value="MERCADO LIBRE">MERCADO LIBRE</option>
+          <option value="ADECCO">ADECCO</option>
+          <option value="EUROFIRMS">EUROFIRMS</option>
+          <option value="MANPOWER GROUP">MANPOWER GROUP</option>
+          <option value="OTRA">OTRA</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- §3 ÁREA -->
+    <div class="section">
+      <div class="section-title">📍 Área de trabajo</div>
+      <div class="field">
+        <label>Selecciona una o más áreas <span class="req">*</span></label>
+        <div class="chips" id="chips-area">
+          <div class="chip" data-val="Inbound" onclick="toggleChip(this,'area')">Inbound</div>
+          <div class="chip" data-val="Voluminoso" onclick="toggleChip(this,'area')">Voluminoso</div>
+          <div class="chip" data-val="Outbound" onclick="toggleChip(this,'area')">Outbound</div>
+          <div class="chip" data-val="Conveyor" onclick="toggleChip(this,'area')">Conveyor</div>
+          <div class="chip" data-val="Pañol" onclick="toggleChip(this,'area')">Pañol</div>
+          <div class="chip" data-val="AMR - Runners" onclick="toggleChip(this,'area')">AMR - Runners</div>
+          <div class="chip" data-val="Sorting" onclick="toggleChip(this,'area')">Sorting</div>
+          <div class="chip" data-val="Andenes" onclick="toggleChip(this,'area')">Andenes</div>
+        </div>
+        <div class="error-msg" id="e-area">Selecciona al menos un área</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- §4 TIPO -->
+    <div class="section">
+      <div class="section-title">🎯 Tipo de feedback</div>
+      <div class="field">
+        <label>¿Qué tipo de feedback es? <span class="req">*</span></label>
+        <div class="radio-group" id="rg-tipo">
+          <div class="radio-btn" onclick="selectTipo(this,'Reconocimiento')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">✅ Reconocimiento</div>
+            <div class="radio-desc">Conducta positiva a destacar</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectTipo(this,'Oportunidad de mejora')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">⚠️ Oportunidad de mejora</div>
+            <div class="radio-desc">Desviación o conducta a corregir</div></div>
+          </div>
+        </div>
+        <div class="error-msg" id="e-tipo">Selecciona un tipo</div>
+      </div>
+    </div>
+
+    <!-- §5 MOTIVO (condicional) -->
+    <div class="divider" id="div-motivo" style="display:none"></div>
+    <div class="section" id="sec-motivo" style="display:none">
+      <div class="section-title">📌 Motivo del feedback</div>
+      <div class="field">
+        <label>Selecciona el motivo <span class="req">*</span></label>
+        <div class="radio-group" id="rg-motivo">
+          <div class="radio-btn" onclick="selectMotivo(this,'Conducta')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">Conducta</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectMotivo(this,'Procedimientos operativos')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">Procedimientos operativos</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectMotivo(this,'Responsabilidad, inasistencias y atrasos')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">Responsabilidad, inasistencias y atrasos</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectMotivo(this,'Seguridad, Salud y Medio Ambiente (SHE)')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">Seguridad, Salud y Medio Ambiente (SHE)</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectMotivo(this,'Loss Prevention (LP)')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">Loss Prevention (LP)</div></div>
+          </div>
+          <div class="radio-btn" onclick="selectMotivo(this,'LMS - Productividad')">
+            <div class="radio-dot"><div class="radio-dot-inner"></div></div>
+            <div><div class="radio-label">LMS - Productividad</div></div>
+          </div>
+        </div>
+        <div class="error-msg" id="e-motivo">Selecciona un motivo</div>
+      </div>
+      <div class="espec-container" id="espec-container">
+        <div class="espec-title" id="espec-title">Especificación del motivo</div>
+        <div id="espec-list"></div>
+        <div class="error-msg" id="e-espec">Selecciona una especificación</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- §6 DETALLE -->
+    <div class="section">
+      <div class="section-title">📝 Detalle</div>
+      <div class="field">
+        <label>Descripción detallada <span class="req">*</span></label>
+        <textarea id="f-detalle" placeholder="Describe con detalle lo que ocurrió: qué pasó, dónde, cómo, quién estaba presente..."></textarea>
+        <div class="error-msg" id="e-detalle">Campo requerido</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- §7 FOTO -->
+    <div class="section">
+      <div class="section-title">📷 Registro fotográfico</div>
+      <div class="field">
+        <label>Foto del evento <span class="opt">(Opcional)</span></label>
+        <div class="photo-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
+          <div class="photo-icon">📷</div>
+          <div class="photo-text">Toca para tomar foto o subir imagen</div>
+        </div>
+        <div class="photo-preview" id="photo-preview">
+          <img id="photo-img" src="" alt="Foto"/>
+          <button class="photo-remove" onclick="removePhoto()">✕</button>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)"/>
+      </div>
+    </div>
+
+  </div>
+  <div class="form-footer">
+    <button class="btn" onclick="submitForm()">Guardar registro →</button>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success" class="screen">
+  <div class="success-icon">✅</div>
+  <div class="success-title">¡Registro guardado!</div>
+  <div class="success-sub">El feedback fue registrado correctamente.</div>
+  <div class="success-reg" id="success-reg">#—</div>
+  <div class="success-actions">
+    <button class="btn" onclick="newRecord()">Nuevo registro</button>
+    <button class="btn btn-outline" onclick="copySuccess()">Copiar ID</button>
+  </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="qr-overlay" id="qr-overlay" onclick="closeQR()"></div>
+<div class="qr-modal" id="qr-modal">
+  <div class="qr-header">
+    <div class="qr-header-title">📷 Escanear KRAKEN ID</div>
+    <button class="qr-close" onclick="closeQR()">✕</button>
+  </div>
+  <div id="qr-reader"></div>
+  <div class="qr-hint">Apunta la cámara al código QR del colaborador</div>
+  <div style="font-size:.8rem;color:var(--text2);text-align:center;margin-bottom:.75rem">— o ingresa manualmente —</div>
+  <div class="qr-manual">
+    <input type="text" id="qr-manual-input" placeholder="KRAKEN ID (ej: 2020268)" inputmode="numeric"/>
+    <button class="btn-lookup" onclick="applyManualKraken()">Buscar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIGURACIÓN — URL de Google Apps Script para guardar
+// Conectado a GRID via /api/submit
+// ═══════════════════════════════════════════════════════
+
+// ── TABLA DE COLABORADORES (fuente: Google Sheet KRAKEN) ──
+const EMPLEADOS = {
+  '348290': { nombre: 'MITZY IVETTE RODRÍGUEZ BRAVO', rut: '20723815-5', ldap: 'mrodriguezbr', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1932302': { nombre: 'LIZZY AMBAR JUSTINE BARRA MIRANDA', rut: '20879113-3', ldap: 'lbarramirand', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1931797': { nombre: 'DIEGO IGNACIO VARGAS FERNANDEZ', rut: '21271127-6', ldap: 'dvargasferna', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1843567': { nombre: 'SHION ARIEL CACERES PEREZ', rut: '19377507-1', ldap: 'scacerespere', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '393808': { nombre: 'CELESTE IRRAZABAL REYES', rut: '19754328-0', ldap: 'cirrazabalre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282501': { nombre: 'MARILYN AMADORA MADRIZ SANTOS', rut: '26573580-0', ldap: 'mmadrizsanto', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1856410': { nombre: 'DANIKA PIERRE', rut: '24500340-4', ldap: 'dapierre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '458158': { nombre: 'GISELLE ARACELLI ESTRELLA FERNANDEZ', rut: '21848685-1', ldap: 'gestrellafer', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '250042': { nombre: 'JUAN CARLOS CALDERON ZOMOSA', rut: '15777195-7', ldap: 'jcalderonzom', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1714812': { nombre: 'NATALY EDITH MARTINEZ OLEA', rut: '15348128-8', ldap: 'nmartinezole', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '217601': { nombre: 'ROSMARY COROMOTO UTRERA CASTILLO', rut: '27144721-3', ldap: 'rutrera', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '407928': { nombre: 'FERNANDA RAMÍREZ CISTERNA', rut: '13885926-6', ldap: 'framirezcist', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '533361': { nombre: 'FRANCISCO JAVIER OLAVE LÓPEZ', rut: '19229968-3', ldap: 'folavelopez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1676635': { nombre: 'ANTONELA PALMA ARGANDOÑA', rut: '21777679-1', ldap: 'apalmaargand', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '244329': { nombre: 'FRANCIA MARILEN ACUÑA LLANQUIMAN', rut: '10771223-2', ldap: 'facunallanqu', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '244903': { nombre: 'PABLO SEBASTIAN PASCUALETY GONZALEZ', rut: '16561763-0', ldap: 'ppascualetyg', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1755306': { nombre: 'PAOLA ANDREA MINA TENORIO', rut: '28096703-3', ldap: 'pminatenorio', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '448582': { nombre: 'MACARENA DIONISIA CARES ARCE', rut: '22858202-6', ldap: 'mcaresarce', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '311673': { nombre: 'ARIEL PATRICIO ROJAS', rut: '13031815-0', ldap: 'arojasrojas', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '1932668': { nombre: 'DIEGO IVAN JARA JEREZ', rut: '20495267-1', ldap: 'djarajerez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '103760': { nombre: 'LUZ ANGELICA VEGA ROJAS', rut: '14682937-6', ldap: 'lvegarojas', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '249290': { nombre: 'EDWIN REINER MORA MORALES', rut: '27016748-9', ldap: 'edmora', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '93968': { nombre: 'OSMANLYS COROMOTO CASTRO LADERA', rut: '26856892-1', ldap: 'ocastrolader', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '190749': { nombre: 'ADELA DE LAS MERCEDES ACUÑA GUERRERO', rut: '18850764-6', ldap: 'aacunaguerre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1973099': { nombre: 'FRANCISCO IGNACIO ACUÑA SILVA', rut: '18599295-0', ldap: 'ext\_francacu', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '455606': { nombre: 'PABLO CESAR RETAMAL OPAZO', rut: '20640984-3', ldap: 'pretamalopaz', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '529452': { nombre: 'MATIAS RODRIGO RAMIREZ PACHECO', rut: '19585920-5', ldap: 'mramirezpach', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1812510': { nombre: 'ADRIANA CAROLINA GARCIA DI DAMASO', rut: '27070860-9', ldap: 'adrianacarog', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '1988432': { nombre: 'JUAN CARLOS LUPO CABRERA', rut: '25836539-9', ldap: 'ext\_julupo', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1710302': { nombre: 'LINA MARÍA GARCÍA BRAVO', rut: '26174778-2', ldap: 'lgarciabravo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '213069': { nombre: 'MAGARETH CADICHON', rut: '25414631-4', ldap: 'mcadichon', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282496': { nombre: 'PEDRO JORGE PLAZA SUAREZ', rut: '22169121-0', ldap: 'peplaza', empresa: 'MERCADO LIBRE', cargo: 'REP 3' },
+  '340079': { nombre: 'YASNA MARISOL ROZAS TAMAYO', rut: '19585975-2', ldap: 'yrozastamayo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '438611': { nombre: 'IVAN ALEJANDRO NOVOA CONTRERAS', rut: '13469574-9', ldap: 'inovoacontre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282360': { nombre: 'XIMENA PATRICIA SOLORZA GODOY', rut: '11642637-4', ldap: 'xsolorzagodo', empresa: 'MERCADO LIBRE', cargo: '\-' },
+  '533896': { nombre: 'LUZ KARINA BERROSPIDE CASQUINA', rut: '25932428-8', ldap: 'lberrospidec', empresa: '', cargo: 'REP 1' },
+  '283498': { nombre: 'RODRIGO ACEVEDO', rut: '11859563-7', ldap: 'racevedo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1991648': { nombre: 'ROSA DEL CARMEN FUENTES URRA', rut: '12651000-4', ldap: 'ext\_rourra', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1846017': { nombre: 'KARIM LUCIANO SABANDO NOVOA', rut: '22069932-3', ldap: 'ksabandonovo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2013083': { nombre: 'JUDITH MABEL CAMPOS HUECHA', rut: '17666425-8', ldap: 'ext\_judcampo', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '117065': { nombre: 'LORAINE CAROLINA VALERO DE ROSAS', rut: '27163680-6', ldap: 'lvaleroderos', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '453004': { nombre: 'NARLIN YULIETH VALENZUELA LERMA', rut: '23959054-3', ldap: 'nvalenzuelal', empresa: 'MERCADO LIBRE', cargo: '\-' },
+  '1820292': { nombre: 'KARLA ISABEL FAJARDO MUÑOZ', rut: '27506104-2', ldap: 'kfajardomuno', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1126366': { nombre: 'FRANCISCO JOEL RAMIREZ PACHECO', rut: '19561593-4', ldap: 'framirezpach', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1954573': { nombre: 'CARLA DANIELA DONOSO GÁLVEZ', rut: '19529352-k', ldap: 'ext\_carldono', empresa: 'ADECCO', cargo: 'REP 1' },
+  '455619': { nombre: 'HUILMER LOZANO CASTILLO', rut: '22495534-0', ldap: 'hlozanocasti', empresa: 'MERCADO LIBRE', cargo: '\-' },
+  '441021': { nombre: 'GABRIEL ANTONIO FLORES GARATE', rut: '21330739-8', ldap: 'gfloresgarat', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1616818': { nombre: 'LUZ ÁNGELA SALAZAR GUERRERO', rut: '28005844-0', ldap: 'lsalazarguer', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1909549': { nombre: 'JOHN MAYCOL MACIAS SANTANA', rut: '21058925-2', ldap: 'jmaciassanta', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1997188': { nombre: 'DAYANA ARACELI LOBOS PIÑEIRO', rut: '16148921-2', ldap: 'ext\_dalobos', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1752504': { nombre: 'ALEJANDRO FRANCISCO MILLÁN HAILLA', rut: '20634634-5', ldap: 'amillanhaill', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2005756': { nombre: 'BELLA AURORA DE LA LUZ JARA HERNANDEZ', rut: '10808417-0', ldap: 'ext\_beljara', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1937326': { nombre: 'CAMILA HOCES MUÑOZ', rut: '17786903-1', ldap: 'ext\_cahoces', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1798249': { nombre: 'VÍCTOR ANDRÉS SIERRA PACHECO', rut: '21060266-6', ldap: 'vsierrapache', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1932842': { nombre: 'ANGELICA DEL ROSARIO PEZOA CIFUENTES', rut: '15485684-6', ldap: 'ext\_anpezoa', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1715414': { nombre: 'KARINA CHIQUINQUIRA CASTILLO PRADA', rut: '26905427-1', ldap: 'kcastillopra', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1858659': { nombre: 'YERKO GIOVANNI RODRIGUEZ GALVEZ', rut: '19545981-9', ldap: 'yerrodriguez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1701675': { nombre: 'LUIS HUMBERTO CORNEJO JOFRE', rut: '17708404-2', ldap: 'lcornejojofr', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1776966': { nombre: 'MARIA JOSE GONZÁLEZ MIRANDA', rut: '15480219-3', ldap: 'mgonzalezmir', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '1771422': { nombre: 'PATRICIA XIMENA DURAN MOLINA', rut: '12652201-0', ldap: 'ext\_patduran', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '117039': { nombre: 'MARÍA MERCEDES MELLA AVELLO', rut: '11846122-3', ldap: 'mmellaavello', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '448315': { nombre: 'MARIA PAZ BONILLA PIZARRO', rut: '18423443-2', ldap: 'ext\_mariboni', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '553138': { nombre: 'ERIC ANDRES PAICHIL VILLAGRA', rut: '20492412-0', ldap: 'ext\_erpaichi', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1997185': { nombre: 'BARBARA PAZ CONTRERA JARA', rut: '14399609-3', ldap: 'ext\_barcontr', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '395083': { nombre: 'BAITIARE KINBERLI TOLOSA LEVIÑANCO', rut: '20828672-2', ldap: 'btolosalevin', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1939575': { nombre: 'FRANCISCO JAVIER FARFAN ARAVENA', rut: '21123829-1', ldap: 'ext\_frfarfan', empresa: 'ADECCO', cargo: 'REP 1' },
+  '239478': { nombre: 'DERMI NOHELIA GRATEROL FLORES', rut: '27186215-6', ldap: 'dgraterol', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '1752427': { nombre: 'JAVIERA IGNACIA MUÑOZ OVALLE', rut: '19818777-1', ldap: 'jmunozovalle', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2005607': { nombre: 'CAMILA PAZ SALAZAR SALAZAR', rut: '22158576-3', ldap: 'ext\_salacami', empresa: 'ADECCO', cargo: 'REP 1' },
+  '117091': { nombre: 'RISLENE ALCIMA', rut: '25980592-9', ldap: 'ralcima', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1986833': { nombre: 'NAYARET ALEJANDRA ROMERO NUÑEZ', rut: '19957128-1', ldap: 'ext\_chvergar', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1948527': { nombre: 'PATRICIA MUÑOZ ARCE', rut: '13458776-8', ldap: 'ext\_patarce', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1682735': { nombre: 'ISLANDE SANON', rut: '25618315-3', ldap: 'ext\_issanon', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '438617': { nombre: 'LAURA GEORGINA MARTÍNEZ CHEUQUIAN', rut: '13590357-4', ldap: 'lmartinezche', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '521703': { nombre: 'CATALINA DE LAS MERCEDES FUENZALIDA PLAZA', rut: '12641251-7', ldap: 'ext\_cafuenza', empresa: 'ADECCO', cargo: 'REP 1' },
+  '2013043': { nombre: 'FERNANDA VANESSA DURAN CABRERA', rut: '18747730-1', ldap: 'ext\_vanesdur', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1965547': { nombre: 'LARENAS AGUIRRE BORIS GUILLERMO', rut: '7815825-5', ldap: 'ext\_bolarena', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '279982': { nombre: 'MARÍA CONSTANZA MELLA GUERRERO', rut: '21387062-9', ldap: 'mmellaguerre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2005735': { nombre: 'CARLOS ALBERTO MEZA ZAPATA', rut: '10960123-3', ldap: 'ext\_carlzapa', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1932623': { nombre: 'MAYKEN YORDAN CASTRO PADILLA', rut: '20206770-0', ldap: 'ext\_maykcast', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1816191': { nombre: 'NAYARETH NICOLE HUACCHA SÁNCHEZ', rut: '20246062-3', ldap: 'ext\_nahuacch', empresa: 'ADECCO', cargo: 'REP 1' },
+  '231909': { nombre: 'VERÓNICA ALEJANDRA BARAHONA CHAVARRIA', rut: '12908940-7', ldap: 'vbarahonacha', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2005634': { nombre: 'SARAY CORINA ZAMORANO PIZARRO', rut: '22292445-6', ldap: 'ext\_sarazamo', empresa: 'ADECCO', cargo: 'REP 1' },
+  '448782': { nombre: 'MANUEL ENRIQUE CASAS-CORDERO GUTIERREZ', rut: '14561002-8', ldap: 'mcasascorder', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '379848': { nombre: 'MIRNA JIMÉNEZ CASTRO', rut: '16785860-0', ldap: 'mirjimenezca', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2013137': { nombre: 'FERNANDA ALEXANDRA CELIS VERA', rut: '21583605-3', ldap: 'ext\_fecelis', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1932705': { nombre: 'ALEJANDRO MANUEL BOBADILLA FUENTES', rut: '20533886-1', ldap: 'abobadillafu', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1801949': { nombre: 'ANTONELLA NICOLE CASTRO MESIAS', rut: '21565302-1', ldap: 'ext\_antoneca', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1932766': { nombre: 'JONATHAN ALEXANDER ZENTENO FAUNDEZ', rut: '18699550-3', ldap: 'jzentenofaun', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1771465': { nombre: 'SOLANGE SCARLETT FIGUEROA ZURITA', rut: '18426518-4', ldap: 'sfigueroazur', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1764089': { nombre: 'MATEO IGNACIO TELLO VENEGAS', rut: '21749676-4', ldap: 'mtellovenega', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '438616': { nombre: 'MICHELLE FRANCISCA VEGA BASTIDAS', rut: '20432384-4', ldap: 'mvegabastida', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1730254': { nombre: 'SEBASTIAN ALEXIS MUÑOZ CUEVAS', rut: '18424208-7', ldap: 'smunozcuevas', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '247465': { nombre: 'JHORDAN STEFF ASTO RAMOS', rut: '25679127-7', ldap: 'jastoramos', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '120277': { nombre: 'VANNIA ESTEFANNIA AVILES CID', rut: '16799073-8', ldap: 'vavilescid', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '1991643': { nombre: 'BRYAN ALBERTO GONZALEZ ROJAS', rut: '18857330-4', ldap: 'ext\_bryrojas', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1744901': { nombre: 'BENJAMIN ANDRES ALVAREZ CORTES', rut: '20240493-6', ldap: 'balvarezcort', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '464721': { nombre: 'STEVE VICENTE HERRERA MUÑOZ', rut: '21252674-6', ldap: 'sherreramuno', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '361333': { nombre: 'LUIS ALBERTO SANTANA MOLINA', rut: '9785040-2', ldap: 'lsantanamoli', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '288096': { nombre: 'EVELYN JANINA PILCO MERO', rut: '22582323-5', ldap: 'epilcomero', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '234304': { nombre: 'MARIBEL ADRIANA QUINTEROS OLIVARES', rut: '11977533-7', ldap: 'mquinterosol', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1931807': { nombre: 'JOYCE KIARE SALAS ANDRADE', rut: '22057907-7', ldap: 'jsalasandrad', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1931870': { nombre: 'ISIDORA ANASTASIA CUBILLOS QUINTEROS', rut: '22164202-3', ldap: 'icubillosqui', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '251982': { nombre: 'MARIA FERNANDA SÁNCHEZ BUSTOS', rut: '20551390-6', ldap: 'msanchezbust', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '211803': { nombre: 'HÉCTOR AGUSTÍN GALLEGUILLOS MONTECINOS', rut: '14257961-8', ldap: 'hgalleguillo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1709489': { nombre: 'DANIEL ESTEBAN JAQUES GONZALEZ', rut: '21663720-8', ldap: 'djaquesgonza', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1754608': { nombre: 'BRISA TERESA DE JESUS', rut: '12723128-1', ldap: 'bmunozescoba', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '522288': { nombre: 'CONSTANZA KARINA GUERRERO LOPEZ', rut: '21450600-9', ldap: 'cguerrerolop', empresa: 'MERCADO LIBRE', cargo: '\-' },
+  '361335': { nombre: 'MAURICIO ALEJANDRO DURAN CARMONA', rut: '15845516-1', ldap: 'mdurancarmon', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2005620': { nombre: 'CONSTANZA FRANCISCA HENRIQUEZ', rut: '22199469-8', ldap: 'ext\_conshenr', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1997234': { nombre: 'ALINE PAZ HERRERA MUÑOZ', rut: '22292903-2', ldap: 'ext\_alinherr', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1997200': { nombre: 'BIANCA NATALIA GAMES SILVA', rut: '18424065-3', ldap: 'ext\_bigames', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1840059': { nombre: 'LINCY YETSABETT DÍAS ZÁRATE', rut: '19564115-3', ldap: 'ext\_lincdias', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '2002912': { nombre: 'YULISSA ANDREA SANDOVAL OSORIO', rut: '21003722-5', ldap: 'ext\_yulisand', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '2002953': { nombre: 'ESTEFANIA NOEMI GONZALEZ OLIVA', rut: '21530999-1', ldap: 'ext\_nooliva', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '1742364': { nombre: 'SEBASTIAN MATIAS NAVARRO GONZALEZ', rut: '21673948-5', ldap: 'Ext\_sebasnav', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1839418': { nombre: 'CLAUDIA ELIZABETH OSARIO NAVARRO', rut: '12860246-1', ldap: 'Ext\_elizosor', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1948823': { nombre: 'SERGIO FABIAN ASTIDILLO TAPIA', rut: '22126111-9', ldap: 'ext\_serastud', empresa: 'ADECCO', cargo: 'REP 1' },
+  '2004407': { nombre: 'PRISCILA CONSTANZA DÍAZ LARRAÑAGA', rut: '20334472-4', ldap: 'ext\_pridiaz', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '220383': { nombre: 'VICTOR ADOLFO ULLOA AQUEVEQUE', rut: '18328282-4', ldap: 'ext\_viulloa', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1987752': { nombre: 'ISIDORA ANTONIA ARAOS HERRERA', rut: '21546097-5', ldap: 'ext\_isaraos', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1932898': { nombre: 'HECTOR ANTONIO MADRIAZA JARA', rut: '16810532-0', ldap: 'ext\_hecmadri', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1973167': { nombre: 'XAVIER ALEXANDER FLORES NEGRETE', rut: '21178411-3', ldap: 'ext\_xavflore', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1997233': { nombre: 'FRANCISCA ANTONIA FERNÁNDEZ CANALES', rut: '21440638-1', ldap: 'Ext\_franccan', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '1715355': { nombre: 'YESSENIA CAROLAINE PARRA CASTRO', rut: '19061837-4', ldap: 'yparracastro', empresa: 'MERCADO LIBRE', cargo: '\-' },
+  '397726': { nombre: 'ANA DEL CARMEN CORDERO MONAGAS', rut: '27930276-1', ldap: 'acorderomona', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282378': { nombre: 'MIRENE AUGUSTIN', rut: '26563792-2', ldap: 'maugustin', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1855922': { nombre: 'DAVID SEBASTIÁN MORALES ARRIAGADA', rut: '20671039-K', ldap: 'ext\_davarria', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '260553': { nombre: 'KATIOSCA VANESA ESPINOZA CORTES', rut: '18327597-6', ldap: 'kespinozacor', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '2013188': { nombre: 'ITALO ANDRÉS MACCHIAVELLO MONTT', rut: '21354115-3', ldap: 'ext\_itmacchi', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '448523': { nombre: 'DANIELA ALEJANDRA ARANCIBIA PAILLAL', rut: '17739314-1', ldap: 'darancibiapa', empresa: '', cargo: 'REP 1' },
+  '1719193': { nombre: 'MANUEL ENRIQUE SAN MARTIN GONZALEZ', rut: '18873968-7', ldap: 'msanmartingo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2013077': { nombre: 'NICOLAS ALEXIS SEPULVEDA VARGAS', rut: '20121176-k', ldap: 'ext\_nicosepu', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '2013272': { nombre: 'CLAUDIA IVONNE SAAVEDRA SAAVEDRA', rut: '15998719-1', ldap: 'ext\_ivosaave', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '532888': { nombre: 'ALEJANDRO JESÚS PÉREZ OÑATE', rut: '18407064-2', ldap: 'aperezonate', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '528563': { nombre: 'ANALYA ALEJANDRA SÁNCHEZ MEDINA', rut: '19831702-0', ldap: 'ansanchezmed', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '351825': { nombre: 'ARACELY ESTRELLA PARADA CONCHA', rut: '20580756-K', ldap: 'aparadaconch', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '1735366': { nombre: 'BERNARDITA IRISOL ADIN REYES', rut: '18578997-7', ldap: 'badinreyes', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '340049': { nombre: 'CAMILA PAZ RAMIREZ ZAMBRANO', rut: '21454947-6', ldap: 'cramirezzamb', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282048': { nombre: 'CAMILO EDGARDO ACEVEDO MEZA', rut: '10902646-8', ldap: 'caacevedo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1752526': { nombre: 'CARMELLE BELENDA MONACE', rut: '26111922-6', ldap: 'cmonace', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1753761': { nombre: 'CAROL YETSABEL HERNANDEZ RIVERA', rut: '20139287-K', ldap: 'carohernande', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1868511': { nombre: 'CLAUDIA VIVIANA HIDALGO', rut: '28472126-8', ldap: 'clahidalgo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1729288': { nombre: 'CLAUDIO IVAN LOPEZ ARAYA', rut: '14155420-4', ldap: 'clopezaraya', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1844729': { nombre: 'CONSTANZA MARCELA PEÑA PEÑA', rut: '18663863-8', ldap: 'cpenapena', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1312202': { nombre: 'DANIELA DOMINIQUE CARMEN GONZALEZ VILLALOBOS', rut: '21255253-4', ldap: 'dagonzalezvi', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1755956': { nombre: 'DANY ROBERTO BENAVIDES RIOS', rut: '26418021-K', ldap: 'dbenavidesri', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1845778': { nombre: 'DEBORA SARAVIA OLIVAREZ', rut: '20120139-K', ldap: 'dsaraviaoliv', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020254': { nombre: 'DIEGO ALONSO JORGE CHIONG MARTINEZ', rut: '21950013-0', ldap: 'dchiongmarti', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '396657': { nombre: 'DYLAN ALEXANDER NAVARRO RAULD', rut: '21177171-2', ldap: 'dnavarroraul', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1728267': { nombre: 'EMA GLADYS TOLEDO GONZÁLEZ', rut: '12737297-7', ldap: 'etoledogonza', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1856405': { nombre: 'EMILY VALENTINA ATENCIO FONSECA', rut: '27115067-9', ldap: 'eatenciofons', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2044050': { nombre: 'EVELYN ALEXANDRA NAVARRETE ZAVALA', rut: '17841264-7', ldap: 'ext\_evelynav', empresa: 'ADECCO', cargo: 'REP 1' },
+  '1730273': { nombre: 'FELIPE CIPRIANO IGNACIO PULGAR RAMIREZ', rut: '20451353-8', ldap: 'fpulgarramir', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020370': { nombre: 'FELIPE ESTEBAN CAMPOS CARILLANCA', rut: '20722206-2', ldap: 'fcamposcaril', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1535197': { nombre: 'FRANCISCA ELISA ARANCIBIA HENRIQUEZ', rut: '21071503-7', ldap: 'farancibiahe', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1844839': { nombre: 'FRANCISCO GABRIEL LUGO BRICEÑO', rut: '25783235-K', ldap: 'flugobriceno', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020179': { nombre: 'FRANCISCO JAVIER OLAVE LÓPEZ', rut: '19229968-3', ldap: 'folavelopez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1932841': { nombre: 'GASTON ALBERTO NAVARRETE VERGARA', rut: '12637964-1', ldap: 'gnavarreteve', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1856414': { nombre: 'GENESIS CATALINA ALBARRACIN GONZALEZ', rut: '21607833-0', ldap: 'galbarracing', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '249544': { nombre: 'GENESIS YOHARA PALMA CUADRA', rut: '18152764-1', ldap: 'gpalmacuadra', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020374': { nombre: 'GONZALO EDUARDO ORTEGA VILLAR', rut: '21340826-7', ldap: 'gortegavilla', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1909539': { nombre: 'GUSTAVO ANDRES MERIÑO GONZALEZ', rut: '19842717-9', ldap: 'gmerinogonza', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '276239': { nombre: 'HECTOR FERNANDO BASSO RETAMAL', rut: '15379653-K', ldap: 'hbassoretama', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1752527': { nombre: 'JAIRO ANDRES VALDEBENITO ALVAREZ', rut: '21177289-1', ldap: 'jvaldebenito', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020268': { nombre: 'JAVIER ALEJANDRO HUENCHUMAN HUENUPI', rut: '18620199-K', ldap: 'jhuenchumanh', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '485752': { nombre: 'JOSÉ ALBERTO PALACIOS RIVAS', rut: '27339432-K', ldap: 'jpalaciosriv', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '463092': { nombre: 'JOSE DANIEL CORONADO ZEÑA', rut: '26023809-4', ldap: 'jcoronadozen', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '409713': { nombre: 'KASSANDRA ANGELICA BADILLA VALLEJOS', rut: '19163360-1', ldap: 'kbadillavall', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '448673': { nombre: 'KATHERINE ANDRE SEPULVEDA NORAMBUENA', rut: '19929691-4', ldap: 'ksepulvedano', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1719196': { nombre: 'KATTY LINARES VELA', rut: '25873957-4', ldap: 'klinaresvela', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020366': { nombre: 'KEYLA DEL VALLE MALEVE VELAZQUEZ', rut: '27653847-0', ldap: 'kmalave', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '178612': { nombre: 'LAGRACE VOLCY', rut: '25942840-8', ldap: 'lvolcy', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '533855': { nombre: 'LISSETTE CAROLINA HERNANDEZ HERNANDEZ', rut: '19284548-3', ldap: 'lishernandez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020368': { nombre: 'LIZZY AMBAR JUSTINE BARRA MIRANDA', rut: '20879113-3', ldap: 'lbarramirand', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1771975': { nombre: 'LUCILA ANDREA FUENTES BARRERA', rut: '17522163-8', ldap: 'lfuentesbarr', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '2020157': { nombre: 'LUIS ALBERTO SANTANA MOLINA', rut: '9785040-2', ldap: 'lsantanamoli', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '239494': { nombre: 'LUIS JUAN BROWN CASTRO', rut: '21194953-8', ldap: 'lbrown', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '451676': { nombre: 'MAITE FRANCISCA PALMA ALVAREZ', rut: '20223144-6', ldap: 'mpalmaalvare', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020372': { nombre: 'MANUEL ANTONIO FERREIRA MEZA', rut: '10170545-5', ldap: 'mferreiramez', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '518126': { nombre: 'MARCELA IVETTE CEA MURILLO', rut: '12681965-K', ldap: 'mceamurillo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282485': { nombre: 'MARÍA LAGOS MADRID', rut: '7626209-8', ldap: 'mlagosmadrid', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020377': { nombre: 'MARIA PILAR MERCADO CAMPOS', rut: '26904065-3', ldap: 'mmercadocamp', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1764084': { nombre: 'MATÍAS IGNACIO SILVA VALENCIA', rut: '19778016-9', ldap: 'msilvavalenc', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1752529': { nombre: 'MELINA NICOLE BOBADILLA GARRIDO', rut: '16088357-K', ldap: 'mbobadillaga', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '282498': { nombre: 'MÓNICA ANDREA BRIONES FLORES', rut: '12966645-5', ldap: 'mbrionesflor', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1909576': { nombre: 'NATALY ANDREA FLORES SUAZO', rut: '16067722-8', ldap: 'nfloressuazo', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '245061': { nombre: 'PABLO ALEXIS MUÑOZ SOLIS', rut: '16084901-0', ldap: 'pmunozsolis', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '396773': { nombre: 'PAMELA LUCÍA BUSTOS ALVAREZ', rut: '13044032-0', ldap: 'pbustosalvar', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1729654': { nombre: 'RENATO CRISTIAN CARVAJAL BLEMITH', rut: '11184785-1', ldap: 'rcarvajalble', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020300': { nombre: 'SCARLETH BELEN CASTRO FERREIRA', rut: '21738537-7', ldap: 'scastroferre', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1948793': { nombre: 'SCARLETT RETAMAL BANDA', rut: '20909080-5', ldap: 'sbandaretama', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '243592': { nombre: 'SOFIA REUMAY MARIQUEO', rut: '17150598-4', ldap: 'sreumaymariq', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1767165': { nombre: 'SONY ANDRÉS ANTONIO DELO SALDIAS', rut: '17280490-K', ldap: 'sdelosaldias', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '2020369': { nombre: 'TAMARA VALENTINA SAEZ CASTRO', rut: '18073463-5', ldap: 'tsaezcastro', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1752512': { nombre: 'TOMÁS GERMÁN HUERTA MUÑOZ', rut: '21082808-7', ldap: 'thuertamunoz', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '534425': { nombre: 'VÍCTOR ANDRÉS GÓMEZ OBREGÓN', rut: '25574791-6', ldap: 'vgomezobrego', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '448739': { nombre: 'VÍCTOR MANUEL LÓPEZ FERNÁNDEZ', rut: '16627188-6', ldap: 'vlopezfernan', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1771243': { nombre: 'YAHAIRA STEFANY BASANTES MONTES', rut: '27170673-1', ldap: 'ybasantesmon', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020373': { nombre: 'YERKO MARCELO DIAZ VARGAS', rut: '20670577-9', ldap: 'ydiazvargas', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020376': { nombre: 'YESSENIA CAROLAINE PARRA CASTRO', rut: '19061837-4', ldap: 'yparracastro', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2020291': { nombre: 'CAMILO SAGREDO BRAVO', rut: '17278129-2', ldap: 'csagredobrav', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '550895': { nombre: 'CRISTÓBAL IGNACIO LARENAS MELLA', rut: '17858841-9', ldap: 'clarenasmell', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '366056': { nombre: 'DANIELA BURBANO OLARTE', rut: '27849071-8', ldap: 'dburbanoolar', empresa: 'MERCADO LIBRE', cargo: 'REP 3' },
+  '491790': { nombre: 'ELISA ALEJANDRA ESPINOZA BARRERA', rut: '17874327-9', ldap: 'eespinozabar', empresa: 'MERCADO LIBRE', cargo: 'REP 3' },
+  '551572': { nombre: 'JONNATHAN ANDRES VELIZ GUERRERO', rut: '28215496-K', ldap: 'jvelizguerre', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '451502': { nombre: 'JOSUE ISAIAS NUÑEZ QUINTEROS', rut: '21201426-5', ldap: 'jnunezquinte', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '451654': { nombre: 'JOSUE LEANDRO PINO REBOLLEDO', rut: '20553190-3', ldap: 'jpinorebolle', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '334124': { nombre: 'JUAN LUIS VASQUEZ CORTES', rut: '16954323-2', ldap: 'jvasquezcort', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '2020323': { nombre: 'MARIA JOSE GONZÁLEZ MIRANDA', rut: '15480219-3', ldap: 'mgonzalezmir', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '2020324': { nombre: 'NELIDA HUAMAN CRUZ', rut: '26191882-K', ldap: 'nhuamancruz', empresa: 'MERCADO LIBRE', cargo: 'REP 3' },
+  '243647': { nombre: 'THOMAS ANTONIO GUERRA ROJAS', rut: '20060350-8', ldap: 'tguerrarojas', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '451246': { nombre: 'VANIA ALMENDRA ASTORGA IBARLUCEA', rut: '19954632-5', ldap: 'vastorgaibar', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '93916': { nombre: 'DANIEL ALEJANDRO BRUNA CARVAJAL', rut: '19885369-0', ldap: 'dbrunacarvaj', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '555637': { nombre: 'CONSTANZA VALENTINA MARDONES DIAZ', rut: '20988261-2', ldap: 'cmardonesdia', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '244582': { nombre: 'LANY DANIELA GARCIA HERNANDEZ', rut: '27212907-K', ldap: 'langarciaher', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2019019': { nombre: 'MARCIAL ANDRES CALDERAS ARAUJO', rut: '26500784-8', ldap: 'mcalderasara', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '478389': { nombre: 'MARCO ANTONIO HUENCHUÑIR ALBORNOZ', rut: '18850899-5', ldap: 'mhuenchunira', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '282478': { nombre: 'NAISON DARIUS', rut: '26566988-3', ldap: 'ndarius', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '154135': { nombre: 'ANGEL ADOLFO MORAN DIAZ', rut: '25623230-8', ldap: 'amorandiaz', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '2018988': { nombre: 'FRANCIA IVANNA FUENTES GOMEZ', rut: '21349346-9', ldap: 'ffuentesgome', empresa: 'MERCADO LIBRE', cargo: 'REP 2' },
+  '1820709': { nombre: 'VANIA MINOSCA ARIAS BAEZA', rut: '16353004-K', ldap: 'variasbaeza', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '1815239': { nombre: 'NICOLAS ALEJANDRO ALFARO DONOSO', rut: '20225472-1', ldap: 'nialfaro', empresa: 'MERCADO LIBRE', cargo: 'TEAM LEADER' },
+  '121408': { nombre: 'CARLOS ROBERTO COLINA CABEZAS', rut: '24703456-0', ldap: 'ccolina', empresa: 'MERCADO LIBRE', cargo: 'SUPERVISOR' },
+  '2144869': { nombre: 'AGUSTÍN IGNACIO ARMIJO ANDRADES', rut: '20907763-9', ldap: 'aarmijoandra', empresa: 'MERCADO LIBRE', cargo: 'REP 1' },
+  '2013012': { nombre: 'ALEJANDRO ANDRES CONEJERA SALAS', rut: '21900637-3', ldap: 'ext\_alconeje', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '2013743': { nombre: 'AMARO IGNACIO GONZALEZ ROCHA', rut: '22351240-2', ldap: 'ext\_amargonz', empresa: 'MANPOWER GROUP', cargo: 'REP 1' },
+  '2013009': { nombre: 'DIEGO ANDRES VASQUEZ VERA', rut: '17271786-1', ldap: 'ext\_andrever', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '261426': { nombre: 'ANGELICA CASTILLO BOISSET', rut: '12457634-2', ldap: 'ext\_angelica', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+  '2005912': { nombre: 'ANIBAL TORRES PINTO', rut: '18081822-7', ldap: 'ext\_anitorre', empresa: 'EUROFIRMS', cargo: 'REP 1' },
+};
+// ── ESPECIFICACIONES POR MOTIVO ────────────────────────
+const ESPECIFICACIONES = {
+  'Conducta':['Código de vestimenta','Falta de ética','Conducta inapropiada'],
+  'Procedimientos operativos':['Bipeo múltiple de paquetes','Armado de HU',
+    'Paquetes cruzados (Segregación por wave - Inbound)','Paquetería en piso','Lanzamiento de paquetes'],
+  'Responsabilidad, inasistencias y atrasos':['Atrasos reiterados (Entrada - Post colación)','Inasistencias reiteradas'],
+  'Seguridad, Salud y Medio Ambiente (SHE)':[
+    'Pelo suelto / cabello sin tomar','Apoyado en cinta transportadora','Sin rodilleras en inducción',
+    'Chaleco reflectante abierto','Sin guantes en operación','Lanzamiento de paquetería',
+    'Traslado simultáneo de múltiples carros','Lanyard sin sistema de seguridad',
+    'Subirse o colgarse de carro','Tránsito fuera de pasos peatonales',
+    'No usar bocina en intersecciones','Traslado de pallet sin apoyo',
+    'Conducta inadecuada / juego de manos','Ingreso con accesorios no permitidos',
+    'Golpe de caja en mano o dedos','Golpe de caja en pie','Aplastamiento de dedos con carro',
+    'Golpe en cabeza','Torcedura de tobillo','Tirón muscular / sobreesfuerzo',
+    'Caída al suelo','Corte / herida cortante','Quemadura','Contacto con sustancia química',
+    'Golpe de carro en cuerpo','Accidente con transpaleta','Descompensación / desmayo',
+    'Raspón / contusión menor','Reacción alérgica / malestar estomacal',
+    'Dolor musculoesquelético sin incidente','Incumplimiento regla de la llave',
+    'Colisión de camión en patio','Carga mal estibada / apilada',
+    'Falla o desperfecto de equipo','Incidente no reportado oportunamente'],
+  'Loss Prevention (LP)':['Ingreso de objetos prohibidos a la operación','Daño deliberado de paquetes'],
+  'LMS - Productividad':['Asignación de proceso erróneo (LMS)','Ociocidad extendida','Clock in auto-generado']
+};
+
+// ── ESTADO ────────────────────────────────────────────
+let selectedAreas=[], selectedTipo='', selectedMotivo='', selectedEspec='';
+let currentReg='', currentUser='';
+let html5QrCode=null;
+
+// ── INIT ──────────────────────────────────────────────
+window.onload=()=>{
+  const s=sessionStorage.getItem('meli_user');
+  if(s){currentUser=s;showForm();}
+};
+
+// ── AUTH ──────────────────────────────────────────────
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const ok=(email.endsWith('@mercadolibre.cl')||email.endsWith('@mercadolibre.com'))&&pass.length>=4;
+  document.getElementById('login-error').style.display=ok?'none':'block';
+  if(!ok)return;
+  currentUser=email; sessionStorage.setItem('meli_user',email); showForm();
+}
+function doLogout(){
+  sessionStorage.removeItem('meli_user'); showScreen('login');
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pass').value='';
+}
+
+// ── SCREENS ───────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showForm(){
+  currentReg=genReg();
+  document.getElementById('reg-number').textContent=currentReg;
+  document.getElementById('header-email').textContent=currentUser;
+  const now=new Date(); now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('f-fecha').value=now.toISOString().slice(0,16);
+  document.getElementById('f-manager').value=currentUser;
+  showScreen('form-screen');
+}
+function genReg(){
+  const c='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return 'SHE-'+Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+
+// ── KRAKEN LOOKUP ─────────────────────────────────────
+function normalizeKraken(raw){
+  return raw.replace(/[{}\s]/g,'').trim();
+}
+function doLookup(krakenRaw){
+  const id=normalizeKraken(krakenRaw);
+  document.getElementById('f-kraken').value=id;
+  const emp=EMPLEADOS[id];
+  const st=document.getElementById('lookup-status');
+  if(emp){
+    document.getElementById('f-nombre').value=emp.nombre||'';
+    document.getElementById('f-rut').value=emp.rut||'';
+    document.getElementById('f-ldap').value=emp.ldap||'';
+    document.getElementById('f-cargo').value=emp.cargo||'';
+    if(emp.empresa){
+      const sel=document.getElementById('f-empresa');
+      const opt=[...sel.options].find(o=>o.value===emp.empresa);
+      sel.value=opt?emp.empresa:'OTRA';
+    }
+    st.className='lookup-status ok';
+    st.textContent='✓ Colaborador encontrado: '+emp.nombre;
+    showToast('Datos cargados ✓');
+  } else {
+    st.className='lookup-status err';
+    st.textContent='⚠ KRAKEN ID no encontrado. Completa los datos manualmente.';
+    showToast('ID no encontrado — completa manualmente');
+  }
+}
+function doLookupBtn(){
+  const v=document.getElementById('f-kraken').value.trim();
+  if(!v){showToast('Ingresa el KRAKEN ID primero');return;}
+  doLookup(v);
+}
+function resetLookup(){
+  const st=document.getElementById('lookup-status');
+  st.className='lookup-status'; st.textContent='';
+}
+
+// ── QR SCANNER ────────────────────────────────────────
+function openQR(){
+  document.getElementById('qr-modal').classList.add('show');
+  document.getElementById('qr-overlay').classList.add('show');
+  document.getElementById('qr-manual-input').value='';
+  setTimeout(()=>{
+    html5QrCode=new Html5Qrcode('qr-reader');
+    html5QrCode.start(
+      {facingMode:'environment'},
+      {fps:10,qrbox:{width:240,height:240}},
+      (decoded)=>{
+        closeQR();
+        document.getElementById('f-kraken').value=normalizeKraken(decoded);
+        doLookup(decoded);
+      },
+      ()=>{}
+    ).catch(e=>{
+      console.warn('QR error:',e);
+      showToast('No se pudo acceder a la cámara');
+    });
+  },300);
+}
+function closeQR(){
+  document.getElementById('qr-modal').classList.remove('show');
+  document.getElementById('qr-overlay').classList.remove('show');
+  if(html5QrCode){
+    html5QrCode.stop().catch(()=>{}).finally(()=>{
+      html5QrCode.clear(); html5QrCode=null;
+    });
+  }
+}
+function applyManualKraken(){
+  const v=document.getElementById('qr-manual-input').value.trim();
+  if(!v){showToast('Ingresa el KRAKEN ID');return;}
+  closeQR();
+  setTimeout(()=>{
+    document.getElementById('f-kraken').value=normalizeKraken(v);
+    doLookup(v);
+  },400);
+}
+
+// ── CHIPS ─────────────────────────────────────────────
+function toggleChip(el,group){
+  el.classList.toggle('active');
+  if(group==='area'){
+    const v=el.dataset.val;
+    selectedAreas=selectedAreas.includes(v)?selectedAreas.filter(a=>a!==v):[...selectedAreas,v];
+  }
+}
+
+// ── TIPO ──────────────────────────────────────────────
+function selectTipo(el,val){
+  document.getElementById('rg-tipo').querySelectorAll('.radio-btn').forEach(r=>r.classList.remove('active'));
+  el.classList.add('active'); selectedTipo=val;
+  document.getElementById('e-tipo').classList.remove('show');
+  const show=val==='Oportunidad de mejora';
+  document.getElementById('sec-motivo').style.display=show?'flex':'none';
+  document.getElementById('div-motivo').style.display=show?'block':'none';
+  if(!show){selectedMotivo='';selectedEspec='';hideEspec();}
+}
+
+// ── MOTIVO ────────────────────────────────────────────
+function selectMotivo(el,motivo){
+  document.getElementById('rg-motivo').querySelectorAll('.radio-btn').forEach(r=>r.classList.remove('active'));
+  el.classList.add('active'); selectedMotivo=motivo; selectedEspec='';
+  document.getElementById('e-motivo').classList.remove('show');
+  renderEspec(motivo);
+}
+function renderEspec(motivo){
+  const items=ESPECIFICACIONES[motivo]||[];
+  const list=document.getElementById('espec-list');
+  document.getElementById('espec-title').textContent='Especificación — '+motivo;
+  list.innerHTML=items.map(item=>`
+    <div class="espec-item" onclick="selectEspec(this,${JSON.stringify(item)})">
+      <div class="espec-dot"><div class="espec-dot-inner"></div></div>
+      <div class="espec-text">${item}</div>
+    </div>`).join('');
+  document.getElementById('espec-container').classList.add('show');
+}
+function selectEspec(el,val){
+  document.getElementById('espec-list').querySelectorAll('.espec-item').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active'); selectedEspec=val;
+  document.getElementById('e-espec').classList.remove('show');
+}
+function hideEspec(){
+  document.getElementById('espec-container').classList.remove('show');
+  document.getElementById('espec-list').innerHTML='';
+}
+
+// ── FOTO ──────────────────────────────────────────────
+function handlePhoto(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    document.getElementById('photo-img').src=ev.target.result;
+    document.getElementById('photo-zone').style.display='none';
+    document.getElementById('photo-preview').style.display='block';
+  };
+  r.readAsDataURL(f);
+}
+function removePhoto(){
+  document.getElementById('photo-input').value='';
+  document.getElementById('photo-preview').style.display='none';
+  document.getElementById('photo-zone').style.display='block';
+}
+
+// ── VALIDACIÓN ────────────────────────────────────────
+function validate(){
+  let ok=true;
+  [['f-manager','e-manager'],['f-nombre','e-nombre'],['f-rut','e-rut'],
+   ['f-kraken','e-kraken'],['f-detalle','e-detalle']].forEach(([fId,eId])=>{
+    const el=document.getElementById(fId);
+    const empty=!el.value.trim();
+    el.classList.toggle('error',empty);
+    document.getElementById(eId).classList.toggle('show',empty);
+    if(empty)ok=false;
+  });
+  if(selectedAreas.length===0){document.getElementById('e-area').classList.add('show');ok=false;}
+  else document.getElementById('e-area').classList.remove('show');
+  if(!selectedTipo){document.getElementById('e-tipo').classList.add('show');ok=false;}
+  if(selectedTipo==='Oportunidad de mejora'){
+    if(!selectedMotivo){document.getElementById('e-motivo').classList.add('show');ok=false;}
+    if(selectedMotivo&&!selectedEspec){document.getElementById('e-espec').classList.add('show');ok=false;}
+  }
+  return ok;
+}
+
+// ── SUBMIT ────────────────────────────────────────────
+function submitForm(){
+  if(!validate()){
+    showToast('Completa los campos obligatorios');
+    const e=document.querySelector('.error,.error-msg.show');
+    if(e)e.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  const payload={
+    registro:currentReg,
+    fecha:document.getElementById('f-fecha').value,
+    manager:document.getElementById('f-manager').value,
+    kraken:document.getElementById('f-kraken').value,
+    nombre:document.getElementById('f-nombre').value.toUpperCase(),
+    rut:document.getElementById('f-rut').value,
+    ldap:document.getElementById('f-ldap').value,
+    cargo:document.getElementById('f-cargo').value,
+    empresa:document.getElementById('f-empresa').value,
+    areas:selectedAreas.join(', '),
+    tipo:selectedTipo,
+    motivo:selectedMotivo,
+    especificacion:selectedEspec,
+    detalle:document.getElementById('f-detalle').value,
+    registradoPor:currentUser,
+    timestamp:new Date().toISOString()
+  };
+  fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json())
+    .then(r=>{if(r.success)showSuccess(payload.registro);else showToast('Error al guardar. Intenta de nuevo.');})
+    .catch(()=>showToast('Error de conexión. Intenta de nuevo.'));
+}
+function showSuccess(reg){
+  document.getElementById('success-reg').textContent=reg;
+  showScreen('success');
+}
+function newRecord(){
+  selectedAreas=[];selectedTipo='';selectedMotivo='';selectedEspec='';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.radio-btn').forEach(r=>r.classList.remove('active'));
+  document.querySelectorAll('input[type=text],input[type=email],textarea')
+    .forEach(i=>{i.value='';i.classList.remove('error');});
+  document.getElementById('f-empresa').value='MERCADO LIBRE';
+  document.querySelectorAll('.error-msg').forEach(e=>e.classList.remove('show'));
+  document.getElementById('sec-motivo').style.display='none';
+  document.getElementById('div-motivo').style.display='none';
+  hideEspec(); resetLookup(); removePhoto(); showForm();
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function copyReg(){navigator.clipboard?.writeText(currentReg).then(()=>showToast('ID copiado ✓'));}
+function copySuccess(){navigator.clipboard?.writeText(document.getElementById('success-reg').textContent).then(()=>showToast('ID copiado ✓'));}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
