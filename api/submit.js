@@ -9,7 +9,10 @@ module.exports = async function handler(req, res) {
   const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
   const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
+  console.log('TOKEN presente:', !!AIRTABLE_TOKEN, '| BASE_ID presente:', !!AIRTABLE_BASE_ID);
   if (!AIRTABLE_TOKEN || !AIRTABLE_BASE_ID) {
+    return res.status(500).json({ error: 'Airtable no configurado' });
+  }
     return res.status(500).json({ error: 'Airtable no configurado' });
   }
 
