@@ -876,7 +876,7 @@ function renderEspec(motivo){
   const list=document.getElementById('espec-list');
   document.getElementById('espec-title').textContent='Especificación — '+motivo;
   list.innerHTML=items.map(item=>`
-    <div class="espec-item" onclick="selectEspec(this,${JSON.stringify(item)})">
+    <div class="espec-item" onclick='selectEspec(this,${JSON.stringify(item)})'>
       <div class="espec-dot"><div class="espec-dot-inner"></div></div>
       <div class="espec-text">${item}</div>
     </div>`).join('');
