@@ -5,53 +5,53 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const d = req.body;
-  const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
-  const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-
-  console.log('TOKEN presente:', !!AIRTABLE_TOKEN, '| BASE_ID presente:', !!AIRTABLE_BASE_ID);
-  if (!AIRTABLE_TOKEN || !AIRTABLE_BASE_ID) {
-    return res.status(500).json({ error: 'Airtable no configurado' });
-  }
-    return res.status(500).json({ error: 'Airtable no configurado' });
-  }
-
-  const fields = {
-    'Registro': d.registro || '',
-    'Nombre': d.nombre || '',
-    'RUT': d.rut || '',
-    'Cargo': d.cargo || '',
-    'Empresa': d.empresa || '',
-    'Areas': d.areas || '',
-    'Tipo': d.tipo || '',
-    'Motivo': d.motivo ? `${d.motivo}${d.especificacion ? ' — ' + d.especificacion : ''}` : '',
-    'Detalle': d.detalle || '',
-    'Manager': d.manager || '',
-    'Fecha': d.fecha ? d.fecha.slice(0, 16).replace('T', ' ') : '',
-    'Registrado Por': d.registradoPor || '',
-  };
-
   try {
-    const atRes = await fetch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Registros`, {
+    const d = req.body || {};
+    const TOKEN = process.env.AIRTABLE_TOKEN;
+    const BASE = process.env.AIRTABLE_BASE_ID;
+
+    console.log('vars:', !!TOKEN, !!BASE, 'body keys:', Object.keys(d));
+
+    if (!TOKEN || !BASE) {
+      return res.status(500).json({ error: 'Airtable no configurado', TOKEN: !!TOKEN, BASE: !!BASE });
+    }
+
+    const fields = {
+      'Registro': String(d.registro || ''),
+      'Nombre': String(d.nombre || ''),
+      'RUT': String(d.rut || ''),
+      'Cargo': String(d.cargo || ''),
+      'Empresa': String(d.empresa || ''),
+      'Areas': String(d.areas || ''),
+      'Tipo': String(d.tipo || ''),
+      'Motivo': String(d.motivo || ''),
+      'Detalle': String(d.detalle || ''),
+      'Manager': String(d.manager || ''),
+      'Fecha': String(d.fecha || ''),
+      'Registrado Por': String(d.registradoPor || ''),
+    };
+
+    console.log('Enviando a Airtable:', JSON.stringify(fields));
+
+    const atRes = await fetch('https://api.airtable.com/v0/' + BASE + '/Registros', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
+        'Authorization': 'Bearer ' + TOKEN,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ fields }),
+      body: JSON.stringify({ fields: fields }),
     });
 
     const result = await atRes.json();
+    console.log('Respuesta Airtable:', JSON.stringify(result));
 
     if (result.id) {
-      return res.status(200).json({ success: true, registro: d.registro, id: result.id });
+      return res.status(200).json({ success: true, id: result.id });
     } else {
-      console.error('Airtable error:', JSON.stringify(result));
-      return res.status(500).json({ error: 'Error en Airtable', detail: result });
+      return res.status(500).json({ error: 'Error Airtable', detail: result });
     }
   } catch (err) {
-    console.error('fetch error:', err);
+    console.error('CRASH:', err.message, err.stack);
     return res.status(500).json({ error: err.message });
   }
 };
-
